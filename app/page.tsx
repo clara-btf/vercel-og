@@ -40,20 +40,35 @@ export default function Home() {
   );
   const [emoji, setEmoji] = useState("🚀");
   const [imagen, setImagen] = useState("");
+  const [svg, setSvg] = useState("");
   const [bg, setBg] = useState("1a1a2e");
   const [color, setColor] = useState("ffffff");
   const [copied, setCopied] = useState(false);
+
+  const svgBase64 = useMemo(() => {
+    const trimmed = svg.trim();
+    if (!trimmed.startsWith("<svg")) return "";
+    try {
+      const bytes = new TextEncoder().encode(trimmed);
+      let binary = "";
+      bytes.forEach((b) => (binary += String.fromCharCode(b)));
+      return btoa(binary);
+    } catch {
+      return "";
+    }
+  }, [svg]);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
     if (titulo) params.set("titulo", titulo);
     if (subtitulo) params.set("subtitulo", subtitulo);
-    if (imagen) params.set("imagen", imagen);
+    if (svgBase64) params.set("svg", svgBase64);
+    else if (imagen) params.set("imagen", imagen);
     else if (emoji) params.set("emoji", emoji);
     if (bg) params.set("bg", bg);
     if (color) params.set("color", color);
     return params.toString();
-  }, [titulo, subtitulo, emoji, imagen, bg, color]);
+  }, [titulo, subtitulo, emoji, imagen, svgBase64, bg, color]);
 
   const relativeUrl = `/api/og?${queryString}`;
 
@@ -164,7 +179,29 @@ export default function Home() {
               onChange={(e) => setImagen(e.target.value)}
               placeholder="https://..."
               type="url"
+              disabled={!!svgBase64}
             />
+          </label>
+
+          <label style={labelStyle}>
+            SVG inline (opcional — tiene prioridad sobre URL y emoji)
+            <textarea
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                minHeight: 100,
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                fontSize: 12,
+              }}
+              value={svg}
+              onChange={(e) => setSvg(e.target.value)}
+              placeholder='<svg width="118" height="118" ...> ... </svg>'
+            />
+            {svg.trim() && !svgBase64 && (
+              <span style={{ color: "#ff8888", fontSize: 12 }}>
+                El contenido no parece un &lt;svg&gt; válido.
+              </span>
+            )}
           </label>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>

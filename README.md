@@ -37,8 +37,11 @@ Todos los parámetros son opcionales y tienen defaults sensatos.
 | `subtitulo` | string (≤220)      | `Un subtítulo corto que acompaña la idea principal`     |
 | `emoji`     | string (≤8)        | `✨`                                                    |
 | `imagen`    | URL `http(s)://`   | (none — si está, reemplaza al `emoji`)                  |
+| `svg`       | base64 de un SVG   | (none — si está, gana sobre `imagen` y `emoji`)         |
 | `bg`        | hex sin `#` (3/6)  | `1a1a2e`                                                |
 | `color`     | hex sin `#` (3/6)  | `ffffff`                                                |
+
+Prioridad del hero: **`svg` > `imagen` > `emoji`**.
 
 ### Ejemplos
 
@@ -68,6 +71,26 @@ Todos los parámetros son opcionales y tienen defaults sensatos.
 - Formatos soportados por Satori/Resvg: PNG, JPEG, GIF estático, WebP.
 - Si está presente, reemplaza al `emoji` como hero (cuadrado redondeado de 520×520 con `object-fit: cover`).
 - Si la URL falla, devuelve mal el contenido o no es una imagen válida, la generación de la imagen falla con error 500. Asegurate que la URL esté viva y devuelva el `Content-Type` correcto.
+
+### Sobre `svg`
+
+Satori (el motor de `@vercel/og`) **sólo renderiza SVG cuando viene como data URI**. Una URL remota a un `.svg` en `imagen` **no funciona** — hay que pasar el markup encodeado.
+
+- El param `svg` espera el markup completo del SVG **encoded en base64** (estándar o url-safe).
+- En el server se valida que decodee a algo que arranque con `<svg`, y se inyecta como `data:image/svg+xml;base64,…` dentro de un `<img>` 520×520 con `object-fit: contain`.
+- Tamaño práctico recomendado: **≤ 8 KB** de SVG crudo. Vercel acepta URLs hasta ~16 KB; SVGs muy grandes hay que subirlos como archivo y servirlos con un host que devuelva PNG/WebP, o pre-rasterizar.
+- Soporte de features SVG en Satori: paths, rect, circle, polygon, gradients lineales/radiales, `<defs>`, `<g>`. Filters, masks y `<foreignObject>` no están soportados o tienen rendering inconsistente.
+
+#### Ejemplo desde el browser
+
+```js
+const svg = `<svg width="118" height="118" ...>...</svg>`;
+const bytes = new TextEncoder().encode(svg);
+const base64 = btoa(String.fromCharCode(...bytes));
+const url = `/api/og?titulo=Hola&svg=${encodeURIComponent(base64)}`;
+```
+
+Desde la landing del proyecto, simplemente pegá el SVG en el textarea — el encoding se hace solo.
 
 ## Nota sobre el límite del Edge Runtime
 

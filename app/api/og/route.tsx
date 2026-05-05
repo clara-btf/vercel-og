@@ -33,6 +33,20 @@ function darken(hex: string, amount = 0.55): string {
   return `rgb(${dr}, ${dg}, ${db})`;
 }
 
+function sanitizeSvgBase64(value: string | null): string | null {
+  if (!value) return null;
+  const cleaned = value.replace(/\s/g, "");
+  if (!/^[A-Za-z0-9+/=_-]+$/.test(cleaned)) return null;
+  const normalized = cleaned.replace(/-/g, "+").replace(/_/g, "/");
+  try {
+    const decoded = atob(normalized);
+    if (!/^\s*<svg[\s>]/i.test(decoded)) return null;
+    return `data:image/svg+xml;base64,${normalized}`;
+  } catch {
+    return null;
+  }
+}
+
 function sanitizeImageUrl(value: string | null): string | null {
   if (!value) return null;
   const trimmed = value.trim();
@@ -71,6 +85,7 @@ export async function GET(req: NextRequest) {
   const bg = sanitizeHex(searchParams.get("bg"), "#1a1a2e");
   const color = sanitizeHex(searchParams.get("color"), "#ffffff");
   const imagen = sanitizeImageUrl(searchParams.get("imagen"));
+  const svgDataUri = sanitizeSvgBase64(searchParams.get("svg"));
 
   const bgDark = darken(bg, 0.35);
   const accent = withAlpha(color, 0.12);
@@ -117,7 +132,27 @@ export async function GET(req: NextRequest) {
             marginTop: 120,
           }}
         >
-          {imagen ? (
+          {svgDataUri ? (
+            <div
+              style={{
+                width: 520,
+                height: 520,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                filter: `drop-shadow(0 24px 60px ${withAlpha(color, 0.2)})`,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={svgDataUri}
+                alt=""
+                width={520}
+                height={520}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
+            </div>
+          ) : imagen ? (
             <div
               style={{
                 width: 520,
