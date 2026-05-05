@@ -33,6 +33,14 @@ const buttonStyle: React.CSSProperties = {
   fontFamily: "inherit",
 };
 
+const layouts = [
+  { value: "center", label: "Center" },
+  { value: "split", label: "Split" },
+  { value: "minimal", label: "Minimal" },
+] as const;
+
+const URL_WARN_THRESHOLD = 14_000;
+
 export default function Home() {
   const [titulo, setTitulo] = useState("Diseño que destaca");
   const [subtitulo, setSubtitulo] = useState(
@@ -41,8 +49,10 @@ export default function Home() {
   const [emoji, setEmoji] = useState("🚀");
   const [imagen, setImagen] = useState("");
   const [svg, setSvg] = useState("");
-  const [bg, setBg] = useState("1a1a2e");
-  const [color, setColor] = useState("ffffff");
+  const [bg, setBg] = useState("0f172a");
+  const [color, setColor] = useState("f8fafc");
+  const [marca, setMarca] = useState("");
+  const [layout, setLayout] = useState<(typeof layouts)[number]["value"]>("center");
   const [copied, setCopied] = useState(false);
 
   const svgBase64 = useMemo(() => {
@@ -67,10 +77,13 @@ export default function Home() {
     else if (emoji) params.set("emoji", emoji);
     if (bg) params.set("bg", bg);
     if (color) params.set("color", color);
+    if (marca) params.set("marca", marca);
+    if (layout && layout !== "center") params.set("layout", layout);
     return params.toString();
-  }, [titulo, subtitulo, emoji, imagen, svgBase64, bg, color]);
+  }, [titulo, subtitulo, emoji, imagen, svgBase64, bg, color, marca, layout]);
 
   const relativeUrl = `/api/og?${queryString}`;
+  const urlTooLong = relativeUrl.length > URL_WARN_THRESHOLD;
 
   const absoluteUrl = useMemo(() => {
     if (typeof window === "undefined") return relativeUrl;
@@ -117,7 +130,7 @@ export default function Home() {
           OG Stories Generator
         </h1>
         <p style={{ margin: 0, color: "#9999aa", fontSize: 15 }}>
-          Genera imágenes 1080×1920 con <code>@vercel/og</code> en el Edge Runtime.
+          Imágenes 1080×1920 con <code>@vercel/og</code>, Twemoji, Inter, autocontraste y caché de un año.
         </p>
       </header>
 
@@ -140,13 +153,30 @@ export default function Home() {
             border: "1px solid #1f1f2e",
           }}
         >
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {layouts.map((l) => (
+              <button
+                key={l.value}
+                type="button"
+                onClick={() => setLayout(l.value)}
+                style={{
+                  ...buttonStyle,
+                  background: layout === l.value ? "#3b3bff" : buttonStyle.background,
+                  border: layout === l.value ? "1px solid #3b3bff" : buttonStyle.border,
+                }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
           <label style={labelStyle}>
             Título
             <input
               style={inputStyle}
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              maxLength={140}
+              maxLength={200}
             />
           </label>
 
@@ -156,20 +186,32 @@ export default function Home() {
               style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
               value={subtitulo}
               onChange={(e) => setSubtitulo(e.target.value)}
-              maxLength={220}
+              maxLength={280}
             />
           </label>
 
-          <label style={labelStyle}>
-            Emoji
-            <input
-              style={inputStyle}
-              value={emoji}
-              onChange={(e) => setEmoji(e.target.value)}
-              maxLength={8}
-              disabled={!!imagen}
-            />
-          </label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <label style={labelStyle}>
+              Emoji
+              <input
+                style={inputStyle}
+                value={emoji}
+                onChange={(e) => setEmoji(e.target.value)}
+                maxLength={8}
+                disabled={!!imagen || !!svgBase64}
+              />
+            </label>
+            <label style={labelStyle}>
+              Marca / watermark
+              <input
+                style={inputStyle}
+                value={marca}
+                onChange={(e) => setMarca(e.target.value)}
+                placeholder="@miusuario"
+                maxLength={40}
+              />
+            </label>
+          </div>
 
           <label style={labelStyle}>
             URL de imagen (opcional — reemplaza al emoji)
@@ -184,7 +226,7 @@ export default function Home() {
           </label>
 
           <label style={labelStyle}>
-            SVG inline (opcional — tiene prioridad sobre URL y emoji)
+            SVG inline (opcional — gana sobre URL y emoji)
             <textarea
               style={{
                 ...inputStyle,
@@ -206,7 +248,7 @@ export default function Home() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <label style={labelStyle}>
-              Color de fondo (hex sin #)
+              Color de fondo (hex)
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   style={inputStyle}
@@ -232,17 +274,18 @@ export default function Home() {
             </label>
 
             <label style={labelStyle}>
-              Color del texto (hex sin #)
+              Color del texto (hex — vacío = autocontraste)
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   style={inputStyle}
                   value={color}
                   onChange={(e) => setColor(e.target.value.replace(/^#/, ""))}
                   maxLength={6}
+                  placeholder="auto"
                 />
                 <input
                   type="color"
-                  value={`#${color}`}
+                  value={`#${color || "ffffff"}`}
                   onChange={(e) => setColor(e.target.value.replace("#", ""))}
                   style={{
                     width: 44,
@@ -271,9 +314,25 @@ export default function Home() {
             </button>
           </div>
 
+          {urlTooLong && (
+            <div
+              style={{
+                padding: 12,
+                background: "#3a1f1f",
+                border: "1px solid #6b2929",
+                borderRadius: 8,
+                color: "#ffcccc",
+                fontSize: 12,
+              }}
+            >
+              ⚠️ La URL pesa {relativeUrl.length.toLocaleString()} bytes — Vercel rechaza
+              requests &gt; ~16 KB. Subí el SVG como archivo y usá <code>imagen</code>, o
+              llamá al endpoint con <code>POST /api/og</code> + JSON body.
+            </div>
+          )}
+
           <div
             style={{
-              marginTop: 8,
               padding: 12,
               background: "#0b0b14",
               border: "1px solid #1f1f2e",
@@ -284,7 +343,10 @@ export default function Home() {
               wordBreak: "break-all",
             }}
           >
-            {relativeUrl}
+            {relativeUrl.length > 400 ? `${relativeUrl.slice(0, 400)}…` : relativeUrl}
+            <div style={{ marginTop: 8, opacity: 0.6 }}>
+              {relativeUrl.length.toLocaleString()} bytes
+            </div>
           </div>
         </section>
 

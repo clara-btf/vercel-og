@@ -1,238 +1,130 @@
 import { ImageResponse } from "@vercel/og";
 import type { NextRequest } from "next/server";
 
+import { darken, sanitizeHex, pickContrast } from "@/lib/og/color";
+import { loadInterFamily } from "@/lib/og/fonts";
+import {
+  sanitizeImageUrl,
+  sanitizeLayout,
+  sanitizeSvgBase64,
+  safeFetchImage,
+  type Layout,
+} from "@/lib/og/validators";
+import { isSameOrigin, verifyParams } from "@/lib/og/sign";
+import { renderLayout, type Hero } from "@/lib/og/layouts";
+
 export const runtime = "edge";
 
 const WIDTH = 1080;
 const HEIGHT = 1920;
 
-function sanitizeHex(value: string | null, fallback: string): string {
-  if (!value) return fallback;
-  const cleaned = value.replace(/^#/, "").trim();
-  if (/^[0-9a-fA-F]{3}$/.test(cleaned) || /^[0-9a-fA-F]{6}$/.test(cleaned)) {
-    return `#${cleaned}`;
+type RawParams = {
+  titulo?: string | null;
+  subtitulo?: string | null;
+  emoji?: string | null;
+  imagen?: string | null;
+  svg?: string | null;
+  bg?: string | null;
+  color?: string | null;
+  marca?: string | null;
+  layout?: string | null;
+  sig?: string | null;
+};
+
+function fromSearchParams(sp: URLSearchParams): RawParams {
+  return {
+    titulo: sp.get("titulo"),
+    subtitulo: sp.get("subtitulo"),
+    emoji: sp.get("emoji"),
+    imagen: sp.get("imagen"),
+    svg: sp.get("svg"),
+    bg: sp.get("bg"),
+    color: sp.get("color"),
+    marca: sp.get("marca"),
+    layout: sp.get("layout"),
+    sig: sp.get("sig"),
+  };
+}
+
+function toSearchParams(raw: RawParams): URLSearchParams {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(raw)) {
+    if (k === "sig") continue;
+    if (typeof v === "string" && v.length > 0) sp.set(k, v);
   }
-  return fallback;
+  return sp;
 }
 
-function darken(hex: string, amount = 0.55): string {
-  const h = hex.replace("#", "");
-  const full =
-    h.length === 3
-      ? h
-          .split("")
-          .map((c) => c + c)
-          .join("")
-      : h;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  const dr = Math.max(0, Math.floor(r * amount));
-  const dg = Math.max(0, Math.floor(g * amount));
-  const db = Math.max(0, Math.floor(b * amount));
-  return `rgb(${dr}, ${dg}, ${db})`;
-}
-
-function sanitizeSvgBase64(value: string | null): string | null {
-  if (!value) return null;
-  const cleaned = value.replace(/\s/g, "");
-  if (!/^[A-Za-z0-9+/=_-]+$/.test(cleaned)) return null;
-  const normalized = cleaned.replace(/-/g, "+").replace(/_/g, "/");
-  try {
-    const decoded = atob(normalized);
-    if (!/^\s*<svg[\s>]/i.test(decoded)) return null;
-    return `data:image/svg+xml;base64,${normalized}`;
-  } catch {
-    return null;
+async function buildResponse(req: NextRequest, raw: RawParams): Promise<Response> {
+  const secret = process.env.OG_SIGNING_SECRET;
+  if (secret) {
+    const host = req.headers.get("host") ?? "";
+    const sameOrigin = isSameOrigin(req, host);
+    if (!sameOrigin) {
+      if (!raw.sig) {
+        return new Response("Missing signature", { status: 401 });
+      }
+      const ok = await verifyParams(toSearchParams(raw), raw.sig, secret);
+      if (!ok) return new Response("Invalid signature", { status: 401 });
+    }
   }
-}
 
-function sanitizeImageUrl(value: string | null): string | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!/^https?:\/\//i.test(trimmed)) return null;
-  try {
-    new URL(trimmed);
-    return trimmed;
-  } catch {
-    return null;
+  const titulo = (raw.titulo ?? "Tu título acá").slice(0, 200);
+  const subtitulo = (
+    raw.subtitulo ?? "Un subtítulo corto que acompaña la idea principal"
+  ).slice(0, 280);
+  const emoji = (raw.emoji ?? "✨").slice(0, 8);
+  const marca = raw.marca ? raw.marca.slice(0, 40) : null;
+  const layout: Layout = sanitizeLayout(raw.layout);
+
+  const bg = sanitizeHex(raw.bg, "#1a1a2e");
+  const color = raw.color ? sanitizeHex(raw.color, pickContrast(bg)) : pickContrast(bg);
+  const bgDark = darken(bg, 0.35);
+
+  const svgDataUri = sanitizeSvgBase64(raw.svg);
+  const imagenUrl = sanitizeImageUrl(raw.imagen);
+
+  let hero: Hero;
+  if (svgDataUri) {
+    hero = { kind: "svg", src: svgDataUri };
+  } else if (imagenUrl) {
+    const buf = await safeFetchImage(imagenUrl);
+    if (buf) {
+      hero = { kind: "image", src: imagenUrl };
+    } else {
+      hero = { kind: "emoji", value: emoji };
+    }
+  } else {
+    hero = { kind: "emoji", value: emoji };
   }
-}
 
-function withAlpha(hex: string, alpha: number): string {
-  const h = hex.replace("#", "");
-  const full =
-    h.length === 3
-      ? h
-          .split("")
-          .map((c) => c + c)
-          .join("")
-      : h;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  const fonts = await loadInterFamily().catch(() => undefined);
+
+  return new ImageResponse(
+    renderLayout(layout, { titulo, subtitulo, hero, bg, bgDark, color, marca }),
+    {
+      width: WIDTH,
+      height: HEIGHT,
+      emoji: "twemoji",
+      fonts,
+      headers: {
+        "Cache-Control": "public, max-age=60, s-maxage=31536000, stale-while-revalidate=86400",
+      },
+    }
+  );
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  return buildResponse(req, fromSearchParams(searchParams));
+}
 
-  const titulo = (searchParams.get("titulo") ?? "Tu título acá").slice(0, 140);
-  const subtitulo = (
-    searchParams.get("subtitulo") ?? "Un subtítulo corto que acompaña la idea principal"
-  ).slice(0, 220);
-  const emoji = (searchParams.get("emoji") ?? "✨").slice(0, 8);
-  const bg = sanitizeHex(searchParams.get("bg"), "#1a1a2e");
-  const color = sanitizeHex(searchParams.get("color"), "#ffffff");
-  const imagen = sanitizeImageUrl(searchParams.get("imagen"));
-  const svgDataUri = sanitizeSvgBase64(searchParams.get("svg"));
-
-  const bgDark = darken(bg, 0.35);
-  const accent = withAlpha(color, 0.12);
-  const accentStrong = withAlpha(color, 0.85);
-
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "120px 96px",
-          color,
-          backgroundColor: bg,
-          backgroundImage: `radial-gradient(ellipse at 30% 20%, ${withAlpha(
-            color,
-            0.18
-          )} 0%, transparent 55%), linear-gradient(160deg, ${bg} 0%, ${bgDark} 100%)`,
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: 96,
-            left: 96,
-            width: 96,
-            height: 8,
-            backgroundColor: accentStrong,
-            borderRadius: 4,
-            display: "flex",
-          }}
-        />
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            gap: 48,
-            marginTop: 120,
-          }}
-        >
-          {svgDataUri ? (
-            <div
-              style={{
-                width: 520,
-                height: 520,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                filter: `drop-shadow(0 24px 60px ${withAlpha(color, 0.2)})`,
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={svgDataUri}
-                alt=""
-                width={520}
-                height={520}
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              />
-            </div>
-          ) : imagen ? (
-            <div
-              style={{
-                width: 520,
-                height: 520,
-                borderRadius: 32,
-                overflow: "hidden",
-                display: "flex",
-                border: `2px solid ${withAlpha(color, 0.18)}`,
-                boxShadow: `0 24px 60px ${withAlpha(color, 0.18)}`,
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imagen}
-                alt=""
-                width={520}
-                height={520}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </div>
-          ) : (
-            <div
-              style={{
-                fontSize: 280,
-                lineHeight: 1,
-                filter: `drop-shadow(0 12px 40px ${withAlpha(color, 0.25)})`,
-                display: "flex",
-              }}
-            >
-              {emoji}
-            </div>
-          )}
-
-          <div
-            style={{
-              fontSize: 104,
-              fontWeight: 800,
-              letterSpacing: "-0.04em",
-              lineHeight: 1.05,
-              maxWidth: 880,
-              display: "flex",
-            }}
-          >
-            {titulo}
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 32,
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              height: 2,
-              backgroundColor: accent,
-              display: "flex",
-            }}
-          />
-          <div
-            style={{
-              fontSize: 44,
-              fontWeight: 400,
-              lineHeight: 1.3,
-              maxWidth: 880,
-              opacity: 0.85,
-              display: "flex",
-            }}
-          >
-            {subtitulo}
-          </div>
-        </div>
-      </div>
-    ),
-    {
-      width: WIDTH,
-      height: HEIGHT,
-    }
-  );
+export async function POST(req: NextRequest) {
+  let body: RawParams;
+  try {
+    body = (await req.json()) as RawParams;
+  } catch {
+    return new Response("Invalid JSON body", { status: 400 });
+  }
+  return buildResponse(req, body);
 }
