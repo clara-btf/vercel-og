@@ -39,6 +39,7 @@ export default function Home() {
     "Generá imágenes para tus historias en segundos"
   );
   const [emoji, setEmoji] = useState("🚀");
+  const [imagen, setImagen] = useState("");
   const [bg, setBg] = useState("1a1a2e");
   const [color, setColor] = useState("ffffff");
   const [copied, setCopied] = useState(false);
@@ -47,11 +48,12 @@ export default function Home() {
     const params = new URLSearchParams();
     if (titulo) params.set("titulo", titulo);
     if (subtitulo) params.set("subtitulo", subtitulo);
-    if (emoji) params.set("emoji", emoji);
+    if (imagen) params.set("imagen", imagen);
+    else if (emoji) params.set("emoji", emoji);
     if (bg) params.set("bg", bg);
     if (color) params.set("color", color);
     return params.toString();
-  }, [titulo, subtitulo, emoji, bg, color]);
+  }, [titulo, subtitulo, emoji, imagen, bg, color]);
 
   const relativeUrl = `/api/og?${queryString}`;
 
@@ -150,6 +152,18 @@ export default function Home() {
               value={emoji}
               onChange={(e) => setEmoji(e.target.value)}
               maxLength={8}
+              disabled={!!imagen}
+            />
+          </label>
+
+          <label style={labelStyle}>
+            URL de imagen (opcional — reemplaza al emoji)
+            <input
+              style={inputStyle}
+              value={imagen}
+              onChange={(e) => setImagen(e.target.value)}
+              placeholder="https://..."
+              type="url"
             />
           </label>
 
