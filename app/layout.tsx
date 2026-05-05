@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import "./globals.css";
 
 const ogParams = new URLSearchParams({
   titulo: "OG Stories Generator",
@@ -12,9 +13,7 @@ const ogParams = new URLSearchParams({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "OG Stories — Generador de imágenes 1080×1920",
   description: "Genera imágenes tamaño historia de Instagram con @vercel/og",
   openGraph: {
@@ -37,21 +36,16 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0b0b14",
+};
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
-      <body
-        style={{
-          margin: 0,
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif",
-          background: "#0b0b14",
-          color: "#f4f4f8",
-          minHeight: "100vh",
-        }}
-      >
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

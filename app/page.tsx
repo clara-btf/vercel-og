@@ -2,37 +2,6 @@
 
 import { useMemo, useState } from "react";
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: 8,
-  border: "1px solid #2a2a3d",
-  background: "#15151f",
-  color: "#f4f4f8",
-  fontSize: 14,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
-  fontSize: 13,
-  color: "#b8b8c8",
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: "10px 16px",
-  borderRadius: 8,
-  border: "1px solid #3a3a55",
-  background: "#1f1f2e",
-  color: "#f4f4f8",
-  fontSize: 14,
-  cursor: "pointer",
-  fontFamily: "inherit",
-};
-
 const layouts = [
   { value: "center", label: "Center" },
   { value: "split", label: "Split" },
@@ -115,96 +84,67 @@ export default function Home() {
   }
 
   return (
-    <main
-      style={{
-        maxWidth: 1200,
-        margin: "0 auto",
-        padding: "48px 32px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 32,
-      }}
-    >
+    <main className="og-main">
       <header style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <h1 style={{ margin: 0, fontSize: 32, letterSpacing: "-0.02em" }}>
+        <h1 style={{ margin: 0, fontSize: "clamp(24px, 5vw, 32px)", letterSpacing: "-0.02em" }}>
           OG Stories Generator
         </h1>
-        <p style={{ margin: 0, color: "#9999aa", fontSize: 15 }}>
+        <p style={{ margin: 0, color: "#9999aa", fontSize: 14 }}>
           Imágenes 1080×1920 con <code>@vercel/og</code>, Twemoji, Inter, autocontraste y caché de un año.
         </p>
       </header>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) auto",
-          gap: 40,
-          alignItems: "start",
-        }}
-      >
-        <section
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-            padding: 24,
-            background: "#11111a",
-            borderRadius: 16,
-            border: "1px solid #1f1f2e",
-          }}
-        >
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="og-grid">
+        <section className="og-form">
+          <div className="og-layout-tabs">
             {layouts.map((l) => (
               <button
                 key={l.value}
                 type="button"
+                className="og-tab"
+                aria-pressed={layout === l.value}
                 onClick={() => setLayout(l.value)}
-                style={{
-                  ...buttonStyle,
-                  background: layout === l.value ? "#3b3bff" : buttonStyle.background,
-                  border: layout === l.value ? "1px solid #3b3bff" : buttonStyle.border,
-                }}
               >
                 {l.label}
               </button>
             ))}
           </div>
 
-          <label style={labelStyle}>
+          <label className="og-label">
             Título
             <input
-              style={inputStyle}
+              className="og-input"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               maxLength={200}
             />
           </label>
 
-          <label style={labelStyle}>
+          <label className="og-label">
             Subtítulo
             <textarea
-              style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
+              className="og-textarea"
               value={subtitulo}
               onChange={(e) => setSubtitulo(e.target.value)}
               maxLength={280}
             />
           </label>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <label style={labelStyle}>
+          <div className="og-row">
+            <label className="og-label">
               Emoji
               <input
-                style={inputStyle}
+                className="og-input"
                 value={emoji}
                 onChange={(e) => setEmoji(e.target.value)}
                 maxLength={8}
                 disabled={!!imagen || !!svgBase64}
               />
             </label>
-            <label style={labelStyle}>
+            <label className="og-label">
               Marca / watermark
               <input
-                style={inputStyle}
+                className="og-input"
                 value={marca}
                 onChange={(e) => setMarca(e.target.value)}
                 placeholder="@miusuario"
@@ -213,10 +153,10 @@ export default function Home() {
             </label>
           </div>
 
-          <label style={labelStyle}>
+          <label className="og-label">
             URL de imagen (opcional — reemplaza al emoji)
             <input
-              style={inputStyle}
+              className="og-input"
               value={imagen}
               onChange={(e) => setImagen(e.target.value)}
               placeholder="https://..."
@@ -225,16 +165,10 @@ export default function Home() {
             />
           </label>
 
-          <label style={labelStyle}>
+          <label className="og-label">
             SVG inline (opcional — gana sobre URL y emoji)
             <textarea
-              style={{
-                ...inputStyle,
-                resize: "vertical",
-                minHeight: 100,
-                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                fontSize: 12,
-              }}
+              className="og-textarea og-textarea-mono"
               value={svg}
               onChange={(e) => setSvg(e.target.value)}
               placeholder='<svg width="118" height="118" ...> ... </svg>'
@@ -246,12 +180,12 @@ export default function Home() {
             )}
           </label>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <label style={labelStyle}>
+          <div className="og-row">
+            <label className="og-label">
               Color de fondo (hex)
-              <div style={{ display: "flex", gap: 8 }}>
+              <div className="og-color-field">
                 <input
-                  style={inputStyle}
+                  className="og-input"
                   value={bg}
                   onChange={(e) => setBg(e.target.value.replace(/^#/, ""))}
                   maxLength={6}
@@ -260,24 +194,16 @@ export default function Home() {
                   type="color"
                   value={`#${bg}`}
                   onChange={(e) => setBg(e.target.value.replace("#", ""))}
-                  style={{
-                    width: 44,
-                    height: 40,
-                    background: "#15151f",
-                    border: "1px solid #2a2a3d",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    padding: 2,
-                  }}
+                  className="og-color-swatch"
                 />
               </div>
             </label>
 
-            <label style={labelStyle}>
-              Color del texto (hex — vacío = autocontraste)
-              <div style={{ display: "flex", gap: 8 }}>
+            <label className="og-label">
+              Color del texto (vacío = autocontraste)
+              <div className="og-color-field">
                 <input
-                  style={inputStyle}
+                  className="og-input"
                   value={color}
                   onChange={(e) => setColor(e.target.value.replace(/^#/, ""))}
                   maxLength={6}
@@ -287,27 +213,19 @@ export default function Home() {
                   type="color"
                   value={`#${color || "ffffff"}`}
                   onChange={(e) => setColor(e.target.value.replace("#", ""))}
-                  style={{
-                    width: 44,
-                    height: 40,
-                    background: "#15151f",
-                    border: "1px solid #2a2a3d",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    padding: 2,
-                  }}
+                  className="og-color-swatch"
                 />
               </div>
             </label>
           </div>
 
-          <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-            <button type="button" style={buttonStyle} onClick={handleCopy}>
+          <div className="og-actions">
+            <button type="button" className="og-btn" onClick={handleCopy}>
               {copied ? "¡Copiada!" : "Copiar URL"}
             </button>
             <button
               type="button"
-              style={{ ...buttonStyle, background: "#3b3bff", borderColor: "#3b3bff" }}
+              className="og-btn og-btn-primary"
               onClick={handleDownload}
             >
               Descargar PNG
@@ -315,67 +233,29 @@ export default function Home() {
           </div>
 
           {urlTooLong && (
-            <div
-              style={{
-                padding: 12,
-                background: "#3a1f1f",
-                border: "1px solid #6b2929",
-                borderRadius: 8,
-                color: "#ffcccc",
-                fontSize: 12,
-              }}
-            >
+            <div className="og-warn">
               ⚠️ La URL pesa {relativeUrl.length.toLocaleString()} bytes — Vercel rechaza
               requests &gt; ~16 KB. Subí el SVG como archivo y usá <code>imagen</code>, o
               llamá al endpoint con <code>POST /api/og</code> + JSON body.
             </div>
           )}
 
-          <div
-            style={{
-              padding: 12,
-              background: "#0b0b14",
-              border: "1px solid #1f1f2e",
-              borderRadius: 8,
-              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              fontSize: 12,
-              color: "#9999aa",
-              wordBreak: "break-all",
-            }}
-          >
+          <div className="og-url">
             {relativeUrl.length > 400 ? `${relativeUrl.slice(0, 400)}…` : relativeUrl}
-            <div style={{ marginTop: 8, opacity: 0.6 }}>
+            <div className="og-url-meta">
               {relativeUrl.length.toLocaleString()} bytes
             </div>
           </div>
         </section>
 
-        <section
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <div
-            style={{
-              width: 270,
-              height: 480,
-              borderRadius: 18,
-              overflow: "hidden",
-              border: "1px solid #2a2a3d",
-              background: "#000",
-            }}
-          >
+        <section className="og-preview-wrap">
+          <div className="og-preview-card">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               key={relativeUrl}
               src={relativeUrl}
               alt="Vista previa"
-              width={270}
-              height={480}
-              style={{ width: "100%", height: "100%", display: "block" }}
+              loading="lazy"
             />
           </div>
           <div style={{ fontSize: 12, color: "#777788" }}>1080 × 1920 (escalado)</div>

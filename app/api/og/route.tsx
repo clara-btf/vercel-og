@@ -55,6 +55,37 @@ function toSearchParams(raw: RawParams): URLSearchParams {
   return sp;
 }
 
+function renderFallback(message: string): Response {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 96,
+          backgroundColor: "#1a1a2e",
+          color: "#ffffff",
+          textAlign: "center",
+        }}
+      >
+        <div style={{ fontSize: 96, fontWeight: 800, marginBottom: 32 }}>OG Stories</div>
+        <div style={{ fontSize: 36, opacity: 0.7, maxWidth: 800 }}>{message}</div>
+      </div>
+    ),
+    {
+      width: WIDTH,
+      height: HEIGHT,
+      headers: {
+        "Cache-Control": "public, max-age=10",
+      },
+    }
+  );
+}
+
 async function buildResponse(req: NextRequest, raw: RawParams): Promise<Response> {
   const secret = process.env.OG_SIGNING_SECRET;
   if (secret) {
@@ -89,29 +120,46 @@ async function buildResponse(req: NextRequest, raw: RawParams): Promise<Response
     hero = { kind: "svg", src: svgDataUri };
   } else if (imagenUrl) {
     const buf = await safeFetchImage(imagenUrl);
-    if (buf) {
-      hero = { kind: "image", src: imagenUrl };
-    } else {
-      hero = { kind: "emoji", value: emoji };
-    }
+    hero = buf ? { kind: "image", src: imagenUrl } : { kind: "emoji", value: emoji };
   } else {
     hero = { kind: "emoji", value: emoji };
   }
 
   const fonts = await loadInterFamily().catch(() => undefined);
 
-  return new ImageResponse(
-    renderLayout(layout, { titulo, subtitulo, hero, bg, bgDark, color, marca }),
-    {
-      width: WIDTH,
-      height: HEIGHT,
-      emoji: "twemoji",
-      fonts,
-      headers: {
-        "Cache-Control": "public, max-age=60, s-maxage=31536000, stale-while-revalidate=86400",
-      },
+  try {
+    return new ImageResponse(
+      renderLayout(layout, { titulo, subtitulo, hero, bg, bgDark, color, marca }),
+      {
+        width: WIDTH,
+        height: HEIGHT,
+        emoji: "twemoji",
+        fonts,
+        headers: {
+          "Cache-Control": "public, max-age=60, s-maxage=31536000, stale-while-revalidate=86400",
+        },
+      }
+    );
+  } catch {
+    try {
+      return new ImageResponse(
+        renderLayout(layout, {
+          titulo,
+          subtitulo,
+          hero: { kind: "emoji", value: emoji },
+          bg,
+          bgDark,
+          color,
+          marca,
+        }),
+        { width: WIDTH, height: HEIGHT }
+      );
+    } catch (err) {
+      return renderFallback(
+        err instanceof Error ? err.message : "No se pudo generar la imagen"
+      );
     }
-  );
+  }
 }
 
 export async function GET(req: NextRequest) {

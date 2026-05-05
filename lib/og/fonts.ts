@@ -1,45 +1,45 @@
-// Trick: Google Fonts returns TTF/WOFF when called with a legacy User-Agent.
-// We cache the ArrayBuffer at module level so cold-start fetches happen once.
+// Inter desde fontsource via jsDelivr — WOFF estable que Satori soporta.
+// Cacheado a nivel módulo y con timeout corto. Si falla, el route cae al
+// font default de @vercel/og sin romper el render.
 
-const UA =
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
+const FONT_URLS: Record<number, string> = {
+  400: "https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/files/inter-latin-400-normal.woff",
+  700: "https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/files/inter-latin-700-normal.woff",
+  800: "https://cdn.jsdelivr.net/npm/@fontsource/inter@5.1.0/files/inter-latin-800-normal.woff",
+};
 
-type FontKey = `${string}-${number}`;
-const cache = new Map<FontKey, Promise<ArrayBuffer>>();
+const cache = new Map<number, Promise<ArrayBuffer>>();
 
-async function fetchGoogleFont(family: string, weight: number): Promise<ArrayBuffer> {
-  const params = new URLSearchParams({
-    family: `${family}:wght@${weight}`,
-    display: "swap",
-  });
-  const cssUrl = `https://fonts.googleapis.com/css2?${params}`;
-  const css = await fetch(cssUrl, { headers: { "User-Agent": UA } }).then((r) => r.text());
-  const match = css.match(/src:\s*url\(([^)]+)\)\s*format\(['"]?(woff2?|truetype|opentype)['"]?\)/);
-  if (!match) throw new Error(`No font URL found in CSS for ${family} ${weight}`);
-  const fontUrl = match[1];
-  const res = await fetch(fontUrl);
-  if (!res.ok) throw new Error(`Failed to fetch font ${family} ${weight}: ${res.status}`);
-  return res.arrayBuffer();
+async function fetchFont(url: string, timeoutMs = 3000): Promise<ArrayBuffer> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return await res.arrayBuffer();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-export function loadFont(family: string, weight: number): Promise<ArrayBuffer> {
-  const key: FontKey = `${family}-${weight}`;
-  let pending = cache.get(key);
+export function loadInterWeight(weight: 400 | 700 | 800): Promise<ArrayBuffer> {
+  const url = FONT_URLS[weight];
+  let pending = cache.get(weight);
   if (!pending) {
-    pending = fetchGoogleFont(family, weight).catch((err) => {
-      cache.delete(key);
+    pending = fetchFont(url).catch((err) => {
+      cache.delete(weight);
       throw err;
     });
-    cache.set(key, pending);
+    cache.set(weight, pending);
   }
   return pending;
 }
 
 export async function loadInterFamily() {
   const [regular, bold, extraBold] = await Promise.all([
-    loadFont("Inter", 400),
-    loadFont("Inter", 700),
-    loadFont("Inter", 800),
+    loadInterWeight(400),
+    loadInterWeight(700),
+    loadInterWeight(800),
   ]);
   return [
     { name: "Inter", data: regular, weight: 400 as const, style: "normal" as const },
