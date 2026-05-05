@@ -36,6 +36,7 @@ Todos los parámetros son opcionales y tienen defaults sensatos.
 | `titulo`    | string (≤140)      | `Tu título acá`                                         |
 | `subtitulo` | string (≤220)      | `Un subtítulo corto que acompaña la idea principal`     |
 | `emoji`     | string (≤8)        | `✨`                                                    |
+| `imagen`    | URL `http(s)://`   | (none — si está, reemplaza al `emoji`)                  |
 | `bg`        | hex sin `#` (3/6)  | `1a1a2e`                                                |
 | `color`     | hex sin `#` (3/6)  | `ffffff`                                                |
 
@@ -56,6 +57,17 @@ Todos los parámetros son opcionales y tienen defaults sensatos.
 ```
 /api/og?titulo=Buen%20finde&emoji=🌴&bg=fef3c7&color=78350f
 ```
+
+```
+/api/og?titulo=Nuevo%20producto&subtitulo=Disponible%20ahora&imagen=https://images.unsplash.com/photo-1542291026-7eec264c27ff&bg=0f172a&color=f8fafc
+```
+
+### Sobre `imagen`
+
+- Tiene que ser una URL `http(s)://` accesible públicamente (el Edge Runtime hace fetch del lado del servidor).
+- Formatos soportados por Satori/Resvg: PNG, JPEG, GIF estático, WebP.
+- Si está presente, reemplaza al `emoji` como hero (cuadrado redondeado de 520×520 con `object-fit: cover`).
+- Si la URL falla, devuelve mal el contenido o no es una imagen válida, la generación de la imagen falla con error 500. Asegurate que la URL esté viva y devuelva el `Content-Type` correcto.
 
 ## Nota sobre el límite del Edge Runtime
 
