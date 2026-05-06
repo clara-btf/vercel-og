@@ -105,7 +105,7 @@ export default function Home() {
     const a = document.createElement("a");
     a.href = url;
     const safeTitle = titulo.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "story";
-    a.download = `${safeTitle}-1080x1920.png`;
+    a.download = `${safeTitle}-1080x1620.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -119,7 +119,7 @@ export default function Home() {
           OG Stories Generator
         </h1>
         <p style={{ margin: 0, color: "#9999aa", fontSize: 14 }}>
-          Imágenes 1080×1920 con <code>@vercel/og</code>, Twemoji, Inter, autocontraste y caché de un año.
+          Imágenes 1080×1620 (2:3) con <code>@vercel/og</code>, Twemoji, Inter, autocontraste y caché de un año.
         </p>
       </header>
 
@@ -390,7 +390,7 @@ export default function Home() {
               loading="lazy"
             />
           </div>
-          <div style={{ fontSize: 12, color: "#777788" }}>1080 × 1920 (escalado)</div>
+          <div style={{ fontSize: 12, color: "#777788" }}>1080 × 1620 (escalado)</div>
         </section>
       </div>
     </main>

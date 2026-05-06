@@ -179,7 +179,7 @@ export function LayoutSplit(props: LayoutProps) {
     >
       <div
         style={{
-          height: 1100,
+          height: 930,
           width: "100%",
           display: "flex",
           alignItems: "center",

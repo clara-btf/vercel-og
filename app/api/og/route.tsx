@@ -22,7 +22,7 @@ import { renderLayout, type Hero } from "@/lib/og/layouts";
 export const runtime = "edge";
 
 const WIDTH = 1080;
-const HEIGHT = 1920;
+const HEIGHT = 1620;
 
 type RawParams = {
   titulo?: string | null;
