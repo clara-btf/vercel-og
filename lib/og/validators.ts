@@ -24,8 +24,8 @@ export function sanitizeImageUrl(value: string | null | undefined): string | nul
   }
 }
 
-const ALLOWED_LAYOUTS = new Set(["center", "split", "minimal"] as const);
-export type Layout = "center" | "split" | "minimal";
+const ALLOWED_LAYOUTS = new Set(["center", "split", "minimal", "tip"] as const);
+export type Layout = "center" | "split" | "minimal" | "tip";
 
 export function sanitizeLayout(value: string | null | undefined): Layout {
   if (value && (ALLOWED_LAYOUTS as Set<string>).has(value)) {

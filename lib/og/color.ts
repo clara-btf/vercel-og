@@ -51,3 +51,49 @@ export function luminance(hex: string): number {
 export function pickContrast(bg: string, light = "#ffffff", dark = "#0f0f1a"): string {
   return luminance(bg) > 0.5 ? dark : light;
 }
+
+export const GRADIENT_PATTERNS = [
+  "linear-vertical",
+  "linear-horizontal",
+  "linear-diagonal",
+  "linear-anti-diagonal",
+  "radial-center",
+  "radial-top-left",
+  "radial-top-right",
+  "radial-bottom-left",
+  "radial-bottom-right",
+] as const;
+export type GradientPattern = (typeof GRADIENT_PATTERNS)[number];
+
+const PATTERN_SET = new Set<string>(GRADIENT_PATTERNS);
+
+export function sanitizeGradientPattern(
+  value: string | null | undefined,
+  fallback: GradientPattern = "linear-vertical"
+): GradientPattern {
+  if (value && PATTERN_SET.has(value)) return value as GradientPattern;
+  return fallback;
+}
+
+export function buildGradient(from: string, to: string, pattern: GradientPattern): string {
+  switch (pattern) {
+    case "linear-vertical":
+      return `linear-gradient(180deg, ${from} 0%, ${to} 100%)`;
+    case "linear-horizontal":
+      return `linear-gradient(90deg, ${from} 0%, ${to} 100%)`;
+    case "linear-diagonal":
+      return `linear-gradient(135deg, ${from} 0%, ${to} 100%)`;
+    case "linear-anti-diagonal":
+      return `linear-gradient(225deg, ${from} 0%, ${to} 100%)`;
+    case "radial-center":
+      return `radial-gradient(circle at 50% 50%, ${from} 0%, ${to} 100%)`;
+    case "radial-top-left":
+      return `radial-gradient(circle at 0% 0%, ${from} 0%, ${to} 110%)`;
+    case "radial-top-right":
+      return `radial-gradient(circle at 100% 0%, ${from} 0%, ${to} 110%)`;
+    case "radial-bottom-left":
+      return `radial-gradient(circle at 0% 100%, ${from} 0%, ${to} 110%)`;
+    case "radial-bottom-right":
+      return `radial-gradient(circle at 100% 100%, ${from} 0%, ${to} 110%)`;
+  }
+}

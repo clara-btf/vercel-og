@@ -15,6 +15,11 @@ export type LayoutProps = {
   bgDark: string;
   color: string;
   marca: string | null;
+  tag?: string | null;
+  highlight?: string | null;
+  accent?: string;
+  accent2?: string | null;
+  bgImage?: string | null;
 };
 
 function HeroBlock({ hero, color, size = 520 }: { hero: Hero; color: string; size?: number }) {
@@ -33,39 +38,14 @@ function HeroBlock({ hero, color, size = 520 }: { hero: Hero; color: string; siz
       </div>
     );
   }
-  if (hero.kind === "svg") {
-    return (
-      <div
-        style={{
-          width: size,
-          height: size,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          filter: `drop-shadow(0 24px 60px ${withAlpha(color, 0.22)})`,
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={hero.src}
-          alt=""
-          width={size}
-          height={size}
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
-        />
-      </div>
-    );
-  }
   return (
     <div
       style={{
         width: size,
         height: size,
-        borderRadius: 32,
-        overflow: "hidden",
         display: "flex",
-        border: `2px solid ${withAlpha(color, 0.18)}`,
-        boxShadow: `0 24px 60px ${withAlpha(color, 0.22)}`,
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -74,7 +54,7 @@ function HeroBlock({ hero, color, size = 520 }: { hero: Hero; color: string; siz
         alt=""
         width={size}
         height={size}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        style={{ width: "100%", height: "100%", objectFit: "contain" }}
       />
     </div>
   );
@@ -312,8 +292,161 @@ export function LayoutMinimal(props: LayoutProps) {
   );
 }
 
-export function renderLayout(layout: "center" | "split" | "minimal", props: LayoutProps) {
+function fitTipTitle(text: string) {
+  const len = text.length;
+  if (len <= 60) return { fontSize: 92, maxLines: 4 };
+  if (len <= 100) return { fontSize: 76, maxLines: 5 };
+  if (len <= 160) return { fontSize: 60, maxLines: 6 };
+  return { fontSize: 48, maxLines: 7 };
+}
+
+function fitTipBody(text: string) {
+  const len = text.length;
+  if (len <= 100) return { fontSize: 38, maxLines: 5 };
+  if (len <= 200) return { fontSize: 32, maxLines: 6 };
+  return { fontSize: 28, maxLines: 7 };
+}
+
+export function LayoutTip(props: LayoutProps) {
+  const {
+    titulo,
+    subtitulo,
+    hero,
+    bg,
+    bgDark,
+    color,
+    marca,
+    tag,
+    highlight,
+    accent = "#dcff1f",
+    accent2,
+    bgImage,
+  } = props;
+  const titleFit = fitTipTitle(titulo);
+  const highlightSize = Math.round(titleFit.fontSize * 0.82);
+  const bodyFit = fitTipBody(subtitulo);
+  const ink = "#0a0a0a";
+  const resolvedBgImage = bgImage ?? `linear-gradient(180deg, ${bg} 0%, ${bgDark} 100%)`;
+  const pillBackground = accent2
+    ? `linear-gradient(90deg, ${accent2} 0%, ${accent} 100%)`
+    : `linear-gradient(90deg, ${withAlpha(accent, 0)} 0%, ${withAlpha(accent, 0.45)} 35%, ${accent} 75%)`;
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        color,
+        backgroundColor: bg,
+        backgroundImage: resolvedBgImage,
+      }}
+    >
+      {tag ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            marginTop: 180,
+            marginLeft: -140,
+            width: 760,
+            height: 84,
+            borderRadius: 60,
+            padding: "0 64px",
+            background: pillBackground,
+            fontSize: 40,
+            fontWeight: 800,
+            color: ink,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {tag}
+        </div>
+      ) : null}
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          padding: "0 110px",
+          marginTop: tag ? 110 : 220,
+        }}
+      >
+        <div
+          style={{
+            fontSize: titleFit.fontSize,
+            fontWeight: 800,
+            letterSpacing: "-0.02em",
+            lineHeight: 1.08,
+            color: ink,
+            ...clampStyle(titleFit.maxLines),
+          }}
+        >
+          {titulo}
+        </div>
+
+        {highlight ? (
+          <div style={{ display: "flex", marginTop: 18 }}>
+            <div
+              style={{
+                backgroundColor: accent,
+                padding: "8px 24px",
+                fontFamily: "Inter",
+                fontSize: highlightSize,
+                fontWeight: 700,
+                fontStyle: "italic",
+                color: ink,
+                lineHeight: 1.15,
+                display: "flex",
+              }}
+            >
+              {highlight}
+            </div>
+          </div>
+        ) : null}
+
+        <div
+          style={{
+            fontSize: bodyFit.fontSize,
+            fontWeight: 400,
+            lineHeight: 1.4,
+            color: ink,
+            marginTop: 80,
+            maxWidth: 720,
+            ...clampStyle(bodyFit.maxLines),
+          }}
+        >
+          {subtitulo}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, display: "flex" }} />
+
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "center",
+        }}
+      >
+        <HeroBlock hero={hero} color={accent} size={820} />
+      </div>
+
+      <Marca marca={marca} color={ink} />
+    </div>
+  );
+}
+
+export function renderLayout(
+  layout: "center" | "split" | "minimal" | "tip",
+  props: LayoutProps
+) {
   if (layout === "split") return <LayoutSplit {...props} />;
   if (layout === "minimal") return <LayoutMinimal {...props} />;
+  if (layout === "tip") return <LayoutTip {...props} />;
   return <LayoutCenter {...props} />;
 }

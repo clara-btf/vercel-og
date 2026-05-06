@@ -6,6 +6,7 @@ const layouts = [
   { value: "center", label: "Center" },
   { value: "split", label: "Split" },
   { value: "minimal", label: "Minimal" },
+  { value: "tip", label: "Tip" },
 ] as const;
 
 const URL_WARN_THRESHOLD = 14_000;
@@ -13,15 +14,21 @@ const URL_WARN_THRESHOLD = 14_000;
 export default function Home() {
   const [titulo, setTitulo] = useState("Diseño que destaca");
   const [subtitulo, setSubtitulo] = useState(
-    "Generá imágenes para tus historias en segundos"
+    "Genera imágenes para tus historias en segundos"
   );
   const [emoji, setEmoji] = useState("🚀");
   const [imagen, setImagen] = useState("");
   const [svg, setSvg] = useState("");
   const [bg, setBg] = useState("0f172a");
+  const [bg2, setBg2] = useState("");
+  const [bgPattern, setBgPattern] = useState("linear-vertical");
   const [color, setColor] = useState("f8fafc");
   const [marca, setMarca] = useState("");
   const [layout, setLayout] = useState<(typeof layouts)[number]["value"]>("center");
+  const [tag, setTag] = useState("");
+  const [highlight, setHighlight] = useState("");
+  const [accent, setAccent] = useState("");
+  const [accent2, setAccent2] = useState("");
   const [copied, setCopied] = useState(false);
 
   const svgBase64 = useMemo(() => {
@@ -45,11 +52,33 @@ export default function Home() {
     else if (imagen) params.set("imagen", imagen);
     else if (emoji) params.set("emoji", emoji);
     if (bg) params.set("bg", bg);
+    if (bg2) params.set("bg2", bg2);
+    if (bgPattern && bgPattern !== "linear-vertical") params.set("bgPattern", bgPattern);
     if (color) params.set("color", color);
     if (marca) params.set("marca", marca);
     if (layout && layout !== "center") params.set("layout", layout);
+    if (tag) params.set("tag", tag);
+    if (highlight) params.set("highlight", highlight);
+    if (accent) params.set("accent", accent);
+    if (accent2) params.set("accent2", accent2);
     return params.toString();
-  }, [titulo, subtitulo, emoji, imagen, svgBase64, bg, color, marca, layout]);
+  }, [
+    titulo,
+    subtitulo,
+    emoji,
+    imagen,
+    svgBase64,
+    bg,
+    bg2,
+    bgPattern,
+    color,
+    marca,
+    layout,
+    tag,
+    highlight,
+    accent,
+    accent2,
+  ]);
 
   const relativeUrl = `/api/og?${queryString}`;
   const urlTooLong = relativeUrl.length > URL_WARN_THRESHOLD;
@@ -109,6 +138,69 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          {layout === "tip" && (
+            <>
+              <label className="og-label">
+                Tag (pill amarillo)
+                <input
+                  className="og-input"
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  placeholder="A Better Way Tip"
+                  maxLength={60}
+                />
+              </label>
+              <label className="og-label">
+                Frase highlighted (italic, fondo accent)
+                <input
+                  className="og-input"
+                  value={highlight}
+                  onChange={(e) => setHighlight(e.target.value)}
+                  placeholder="pero también de tu salud"
+                  maxLength={120}
+                />
+              </label>
+              <div className="og-row">
+                <label className="og-label">
+                  Accent color (hex)
+                  <div className="og-color-field">
+                    <input
+                      className="og-input"
+                      value={accent}
+                      onChange={(e) => setAccent(e.target.value.replace(/^#/, ""))}
+                      placeholder="dcff1f"
+                      maxLength={6}
+                    />
+                    <input
+                      type="color"
+                      value={`#${accent || "dcff1f"}`}
+                      onChange={(e) => setAccent(e.target.value.replace("#", ""))}
+                      className="og-color-swatch"
+                    />
+                  </div>
+                </label>
+                <label className="og-label">
+                  Accent secundario (degradado pill)
+                  <div className="og-color-field">
+                    <input
+                      className="og-input"
+                      value={accent2}
+                      onChange={(e) => setAccent2(e.target.value.replace(/^#/, ""))}
+                      placeholder="opcional"
+                      maxLength={6}
+                    />
+                    <input
+                      type="color"
+                      value={`#${accent2 || accent || "dcff1f"}`}
+                      onChange={(e) => setAccent2(e.target.value.replace("#", ""))}
+                      className="og-color-swatch"
+                    />
+                  </div>
+                </label>
+              </div>
+            </>
+          )}
 
           <label className="og-label">
             Título
@@ -216,6 +308,46 @@ export default function Home() {
                   className="og-color-swatch"
                 />
               </div>
+            </label>
+          </div>
+
+          <div className="og-row">
+            <label className="og-label">
+              Fondo segundo color (vacío = degradado auto)
+              <div className="og-color-field">
+                <input
+                  className="og-input"
+                  value={bg2}
+                  onChange={(e) => setBg2(e.target.value.replace(/^#/, ""))}
+                  maxLength={6}
+                  placeholder="auto"
+                />
+                <input
+                  type="color"
+                  value={`#${bg2 || bg || "ffffff"}`}
+                  onChange={(e) => setBg2(e.target.value.replace("#", ""))}
+                  className="og-color-swatch"
+                />
+              </div>
+            </label>
+
+            <label className="og-label">
+              Patrón de degradado
+              <select
+                className="og-input"
+                value={bgPattern}
+                onChange={(e) => setBgPattern(e.target.value)}
+              >
+                <option value="linear-vertical">Lineal — arriba a abajo</option>
+                <option value="linear-horizontal">Lineal — izq. a der.</option>
+                <option value="linear-diagonal">Lineal — diagonal ↘</option>
+                <option value="linear-anti-diagonal">Lineal — diagonal ↙</option>
+                <option value="radial-center">Radial — desde centro</option>
+                <option value="radial-top-left">Radial — esquina sup. izq.</option>
+                <option value="radial-top-right">Radial — esquina sup. der.</option>
+                <option value="radial-bottom-left">Radial — esquina inf. izq.</option>
+                <option value="radial-bottom-right">Radial — esquina inf. der.</option>
+              </select>
             </label>
           </div>
 

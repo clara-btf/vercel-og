@@ -1,7 +1,13 @@
 import { ImageResponse } from "@vercel/og";
 import type { NextRequest } from "next/server";
 
-import { darken, sanitizeHex, pickContrast } from "@/lib/og/color";
+import {
+  darken,
+  sanitizeHex,
+  pickContrast,
+  buildGradient,
+  sanitizeGradientPattern,
+} from "@/lib/og/color";
 import { loadInterFamily } from "@/lib/og/fonts";
 import {
   sanitizeImageUrl,
@@ -25,9 +31,15 @@ type RawParams = {
   imagen?: string | null;
   svg?: string | null;
   bg?: string | null;
+  bg2?: string | null;
+  bgPattern?: string | null;
   color?: string | null;
   marca?: string | null;
   layout?: string | null;
+  tag?: string | null;
+  highlight?: string | null;
+  accent?: string | null;
+  accent2?: string | null;
   sig?: string | null;
 };
 
@@ -39,9 +51,15 @@ function fromSearchParams(sp: URLSearchParams): RawParams {
     imagen: sp.get("imagen"),
     svg: sp.get("svg"),
     bg: sp.get("bg"),
+    bg2: sp.get("bg2"),
+    bgPattern: sp.get("bgPattern"),
     color: sp.get("color"),
     marca: sp.get("marca"),
     layout: sp.get("layout"),
+    tag: sp.get("tag"),
+    highlight: sp.get("highlight"),
+    accent: sp.get("accent"),
+    accent2: sp.get("accent2"),
     sig: sp.get("sig"),
   };
 }
@@ -107,10 +125,20 @@ async function buildResponse(req: NextRequest, raw: RawParams): Promise<Response
   const emoji = (raw.emoji ?? "✨").slice(0, 8);
   const marca = raw.marca ? raw.marca.slice(0, 40) : null;
   const layout: Layout = sanitizeLayout(raw.layout);
+  const tag = raw.tag ? raw.tag.slice(0, 60) : null;
+  const highlight = raw.highlight ? raw.highlight.slice(0, 120) : null;
 
-  const bg = sanitizeHex(raw.bg, "#1a1a2e");
+  const defaultBg = layout === "tip" ? "#f7d7e2" : "#1a1a2e";
+  const bg = sanitizeHex(raw.bg, defaultBg);
   const color = raw.color ? sanitizeHex(raw.color, pickContrast(bg)) : pickContrast(bg);
-  const bgDark = darken(bg, 0.35);
+  const bgDark = darken(bg, layout === "tip" ? 0.92 : 0.35);
+  const accent = raw.accent ? sanitizeHex(raw.accent, "#dcff1f") : "#dcff1f";
+  const accent2 = raw.accent2 ? sanitizeHex(raw.accent2, accent) : null;
+  const bg2 = raw.bg2 ? sanitizeHex(raw.bg2, bgDark) : null;
+  const bgPattern = sanitizeGradientPattern(raw.bgPattern);
+  const bgImage = raw.bg2 || raw.bgPattern
+    ? buildGradient(bg, bg2 ?? bgDark, bgPattern)
+    : null;
 
   const svgDataUri = sanitizeSvgBase64(raw.svg);
   const imagenUrl = sanitizeImageUrl(raw.imagen);
@@ -129,7 +157,20 @@ async function buildResponse(req: NextRequest, raw: RawParams): Promise<Response
 
   try {
     return new ImageResponse(
-      renderLayout(layout, { titulo, subtitulo, hero, bg, bgDark, color, marca }),
+      renderLayout(layout, {
+        titulo,
+        subtitulo,
+        hero,
+        bg,
+        bgDark,
+        color,
+        marca,
+        tag,
+        highlight,
+        accent,
+        accent2,
+        bgImage,
+      }),
       {
         width: WIDTH,
         height: HEIGHT,
@@ -151,6 +192,11 @@ async function buildResponse(req: NextRequest, raw: RawParams): Promise<Response
           bgDark,
           color,
           marca,
+          tag,
+          highlight,
+          accent,
+          accent2,
+          bgImage,
         }),
         { width: WIDTH, height: HEIGHT }
       );
