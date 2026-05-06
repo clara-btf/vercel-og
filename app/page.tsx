@@ -11,6 +11,22 @@ const layouts = [
 
 const URL_WARN_THRESHOLD = 14_000;
 
+const TIP_PRESET = {
+  titulo: "Tu cuerpo es tu casa,",
+  highlight: "cuidalo cada día",
+  subtitulo:
+    "Pequeñas pausas y movimiento durante el día bajan el estrés y suben tu energía. Empezá hoy con 5 minutos de respiración consciente.",
+  tag: "A Better Way Tip",
+  emoji: "🧘‍♀️",
+  bg: "fff4e6",
+  bg2: "ffd1a8",
+  bgPattern: "radial-top-left",
+  accent: "7c3aed",
+  accent2: "ec4899",
+  color: "",
+  marca: "",
+};
+
 export default function Home() {
   const [titulo, setTitulo] = useState("Diseño que destaca");
   const [subtitulo, setSubtitulo] = useState(
@@ -30,6 +46,25 @@ export default function Home() {
   const [accent, setAccent] = useState("");
   const [accent2, setAccent2] = useState("");
   const [copied, setCopied] = useState(false);
+  const [tipPresetLoaded, setTipPresetLoaded] = useState(false);
+
+  function selectLayout(value: (typeof layouts)[number]["value"]) {
+    if (value === "tip" && !tipPresetLoaded && !tag && !highlight) {
+      setTitulo(TIP_PRESET.titulo);
+      setHighlight(TIP_PRESET.highlight);
+      setSubtitulo(TIP_PRESET.subtitulo);
+      setTag(TIP_PRESET.tag);
+      setEmoji(TIP_PRESET.emoji);
+      setBg(TIP_PRESET.bg);
+      setBg2(TIP_PRESET.bg2);
+      setBgPattern(TIP_PRESET.bgPattern);
+      setAccent(TIP_PRESET.accent);
+      setAccent2(TIP_PRESET.accent2);
+      setColor(TIP_PRESET.color);
+      setTipPresetLoaded(true);
+    }
+    setLayout(value);
+  }
 
   const svgBase64 = useMemo(() => {
     const trimmed = svg.trim();
@@ -105,7 +140,7 @@ export default function Home() {
     const a = document.createElement("a");
     a.href = url;
     const safeTitle = titulo.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "story";
-    a.download = `${safeTitle}-1080x1620.png`;
+    a.download = `${safeTitle}-1080x1920.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -119,7 +154,7 @@ export default function Home() {
           OG Stories Generator
         </h1>
         <p style={{ margin: 0, color: "#9999aa", fontSize: 14 }}>
-          Imágenes 1080×1620 (2:3) con <code>@vercel/og</code>, Twemoji, Inter, autocontraste y caché de un año.
+          Imágenes 1080×1920 (9:16) con <code>@vercel/og</code>, Twemoji, Inter, autocontraste y caché de un año.
         </p>
       </header>
 
@@ -132,7 +167,7 @@ export default function Home() {
                 type="button"
                 className="og-tab"
                 aria-pressed={layout === l.value}
-                onClick={() => setLayout(l.value)}
+                onClick={() => selectLayout(l.value)}
               >
                 {l.label}
               </button>
@@ -390,7 +425,7 @@ export default function Home() {
               loading="lazy"
             />
           </div>
-          <div style={{ fontSize: 12, color: "#777788" }}>1080 × 1620 (escalado)</div>
+          <div style={{ fontSize: 12, color: "#777788" }}>1080 × 1920 (escalado)</div>
         </section>
       </div>
     </main>

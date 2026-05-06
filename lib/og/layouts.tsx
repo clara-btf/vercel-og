@@ -179,7 +179,7 @@ export function LayoutSplit(props: LayoutProps) {
     >
       <div
         style={{
-          height: 930,
+          height: 1100,
           width: "100%",
           display: "flex",
           alignItems: "center",
@@ -350,7 +350,7 @@ export function LayoutTip(props: LayoutProps) {
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
-            marginTop: 180,
+            marginTop: 220,
             marginLeft: -140,
             width: 760,
             height: 84,
@@ -372,7 +372,7 @@ export function LayoutTip(props: LayoutProps) {
           display: "flex",
           flexDirection: "column",
           padding: "0 110px",
-          marginTop: tag ? 110 : 220,
+          marginTop: tag ? 130 : 260,
         }}
       >
         <div
@@ -414,7 +414,7 @@ export function LayoutTip(props: LayoutProps) {
             fontWeight: 400,
             lineHeight: 1.4,
             color: ink,
-            marginTop: 80,
+            marginTop: 100,
             maxWidth: 720,
             ...clampStyle(bodyFit.maxLines),
           }}

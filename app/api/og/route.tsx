@@ -22,7 +22,7 @@ import { renderLayout, type Hero } from "@/lib/og/layouts";
 export const runtime = "edge";
 
 const WIDTH = 1080;
-const HEIGHT = 1620;
+const HEIGHT = 1920;
 
 type RawParams = {
   titulo?: string | null;
@@ -128,7 +128,7 @@ async function buildResponse(req: NextRequest, raw: RawParams): Promise<Response
   const tag = raw.tag ? raw.tag.slice(0, 60) : null;
   const highlight = raw.highlight ? raw.highlight.slice(0, 120) : null;
 
-  const defaultBg = layout === "tip" ? "#f7d7e2" : "#1a1a2e";
+  const defaultBg = layout === "tip" ? "#fff4e6" : "#1a1a2e";
   const bg = sanitizeHex(raw.bg, defaultBg);
   const color = raw.color ? sanitizeHex(raw.color, pickContrast(bg)) : pickContrast(bg);
   const bgDark = darken(bg, layout === "tip" ? 0.92 : 0.35);

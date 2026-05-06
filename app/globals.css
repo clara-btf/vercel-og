@@ -92,7 +92,7 @@ button {
 .og-preview-card {
   width: 100%;
   max-width: 270px;
-  aspect-ratio: 1080 / 1620;
+  aspect-ratio: 1080 / 1920;
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid #2a2a3d;
